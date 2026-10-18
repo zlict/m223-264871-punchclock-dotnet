@@ -13,6 +13,11 @@ public class EntryDto : IValidatableObject
     [Required(ErrorMessage = "Check-out is required.")]
     public DateTime? CheckOut { get; set; }
 
+    public int? CategoryId { get; set; }
+
+    [Required]
+    public List<int> TagIds { get; set; } = [];
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         // Required handles missing values before object-level validation.
