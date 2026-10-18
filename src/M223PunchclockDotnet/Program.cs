@@ -20,6 +20,7 @@ builder.Services.AddSwaggerGen();
 
 
 builder.Services.AddScoped<EntryService>();
+builder.Services.AddScoped<TimeSummaryService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<TagService>();
 builder.Services.AddScoped<ExampleDataService>();

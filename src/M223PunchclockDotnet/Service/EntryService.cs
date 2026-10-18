@@ -1,4 +1,5 @@
 using M223PunchclockDotnet.Model;
+using M223PunchclockDotnet.Dto;
 using Microsoft.EntityFrameworkCore;
 
 namespace M223PunchclockDotnet.Service
@@ -7,9 +8,18 @@ namespace M223PunchclockDotnet.Service
     {
         private readonly DatabaseContext _databaseContext;
 
-        public EntryService(DatabaseContext databaseContext){
+        private readonly TimeSummaryService _timeSummaryService;
+
+        public EntryService(DatabaseContext databaseContext, TimeSummaryService timeSummaryService){
             _databaseContext = databaseContext;
+            _timeSummaryService = timeSummaryService;
         }
+        public async Task<List<TimeSummaryDto>> GetTimeSummariesAsync()
+        {
+            var entries = await _databaseContext.Entries.AsNoTracking().ToListAsync();
+            return _timeSummaryService.CalculateSummaryPerDay(entries);
+        }
+
         public Task<List<Entry>> FindAll()
         {
             return _databaseContext.Entries.Include(e => e.Category).Include(e => e.Tags).OrderBy(e => e.Id).ToListAsync();
