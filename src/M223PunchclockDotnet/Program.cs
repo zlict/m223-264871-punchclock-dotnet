@@ -22,6 +22,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<EntryService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<TagService>();
+builder.Services.AddScoped<ExampleDataService>();
 
 var app = builder.Build();
 
@@ -45,6 +46,12 @@ await using (var scope = app.Services.CreateAsyncScope())
     // Drop-and-create: every application start resets the configured database.
     await context.Database.EnsureDeletedAsync();
     await context.Database.EnsureCreatedAsync();
+
+    if (app.Environment.IsDevelopment()
+        && app.Configuration.GetValue<bool>("Punchclock:ExampleData:Enabled"))
+    {
+        await services.GetRequiredService<ExampleDataService>().CreateExampleDataAsync();
+    }
 }
 
 app.UseDefaultFiles();
