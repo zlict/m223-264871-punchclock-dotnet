@@ -10,7 +10,9 @@ builder.Services.AddControllers();
 
 builder.Services.AddDbContext<DatabaseContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Punchclock")
-        ?? "Host=db;Database=postgres;Username=postgres;Password=postgres"));
+        ?? "Host=db;Database=postgres;Username=postgres;Password=postgres",
+        // The application uses postgres itself; administer it through a different database.
+        postgres => postgres.UseAdminDatabase("template1")));
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -35,13 +37,14 @@ if (app.Environment.IsDevelopment())
 }
 
 
-using (var scope = app.Services.CreateScope())
+await using (var scope = app.Services.CreateAsyncScope())
 {
     var services = scope.ServiceProvider;
 
     var context = services.GetRequiredService<DatabaseContext>();
-    context.Database.EnsureCreated();
-    // DbInitializer.Initialize(context);
+    // Drop-and-create: every application start resets the configured database.
+    await context.Database.EnsureDeletedAsync();
+    await context.Database.EnsureCreatedAsync();
 }
 
 app.UseDefaultFiles();
