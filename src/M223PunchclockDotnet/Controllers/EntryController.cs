@@ -1,5 +1,6 @@
 using System.Net.Mime;
 using M223PunchclockDotnet.Model;
+using M223PunchclockDotnet.Dto;
 using M223PunchclockDotnet.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,43 +18,32 @@ namespace M223PunchclockDotnet.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType<Entry>(StatusCodes.Status200OK)]
+        [ProducesResponseType<List<EntryDto>>(StatusCodes.Status200OK)]
         public async Task<IActionResult> Get()
         {
             var allEntries = await _entryService.FindAll();
-            return Ok(allEntries);
+            return Ok(allEntries.Select(ToDto).ToList());
         }
 
-        [HttpPost()]
+        [HttpPost]
         [Consumes(MediaTypeNames.Application.Json)]
-        [ProducesResponseType<Entry>(StatusCodes.Status201Created)]
-        public async Task<ActionResult<Entry>> AddEntry(Entry entry){
-            var newElement = await _entryService.AddEntry(entry);
-
-            return CreatedAtAction(nameof(Get), new{id = entry.Id}, entry);
+        [ProducesResponseType<EntryDto>(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<EntryDto>> AddEntry(EntryDto dto)
+        {
+            var newEntry = await _entryService.AddEntry(ToEntity(dto));
+            return CreatedAtAction(nameof(Get), new { id = newEntry.Id }, ToDto(newEntry));
         }
-
 
         [HttpPut("{id:int}")]
         [Consumes(MediaTypeNames.Application.Json)]
-        [ProducesResponseType<Entry>(StatusCodes.Status200OK)]
+        [ProducesResponseType<EntryDto>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<Entry>> UpdateEntryAsync(int id, Entry entry)
+        public async Task<ActionResult<EntryDto>> UpdateEntryAsync(int id, EntryDto dto)
         {
-            // DateTime is a value type: Required alone cannot detect missing values.
-            if (entry.CheckIn == default || entry.CheckOut == default)
-            {
-                return BadRequest("Check-in and check-out are required.");
-            }
-
-            if (entry.CheckIn.Kind != DateTimeKind.Utc || entry.CheckOut.Kind != DateTimeKind.Utc)
-            {
-                return BadRequest("Check-in and check-out must be UTC timestamps (Z).");
-            }
-
-            var updatedEntry = await _entryService.UpdateEntryAsync(id, entry);
-            return updatedEntry is null ? NotFound() : Ok(updatedEntry);
+            var updatedEntry = await _entryService.UpdateEntryAsync(id, ToEntity(dto));
+            return updatedEntry is null ? NotFound() : Ok(ToDto(updatedEntry));
         }
 
         [HttpDelete("{id:int}")]
@@ -64,6 +54,20 @@ namespace M223PunchclockDotnet.Controllers
             var deleted = await _entryService.DeleteEntryAsync(id);
             return deleted ? NoContent() : NotFound();
         }
+
+        private static Entry ToEntity(EntryDto dto) => new()
+        {
+            // ApiController validates the DTO before invoking the action.
+            CheckIn = dto.CheckIn!.Value,
+            CheckOut = dto.CheckOut!.Value
+        };
+
+        private static EntryDto ToDto(Entry entry) => new()
+        {
+            Id = entry.Id,
+            CheckIn = entry.CheckIn,
+            CheckOut = entry.CheckOut
+        };
 
     }
 }
