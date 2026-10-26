@@ -22,5 +22,22 @@ namespace M223PunchclockDotnet.Service
 
             return entry;
         }
+        public async Task<Entry> DeleteEntry(Entry entry)
+        {
+            _databaseContext.Entries.Remove(entry);
+            await _databaseContext.SaveChangesAsync();
+
+            return entry;
+        }
+
+        public async Task<Entry?> UpdateEntry(Entry entry)
+        {
+            _databaseContext.Entries.Update(entry);
+            await _databaseContext.SaveChangesAsync();
+            return entry;
+        }
+
+        public Task<Entry?> FindById(int id)
+            => _databaseContext.Entries.FindAsync(id).AsTask();
     }
 }

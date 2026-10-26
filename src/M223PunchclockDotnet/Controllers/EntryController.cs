@@ -33,6 +33,68 @@ namespace M223PunchclockDotnet.Controllers
             return CreatedAtAction(nameof(Get), new{id = entry.Id}, entry);
         }
 
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteEntry(int id){
+            var entryToDelete = await _entryService.FindById(id);
+            if (entryToDelete == null)
+            {
+                return NotFound();
+            }
 
+            await _entryService.DeleteEntry(entryToDelete);
+            return NoContent();
+        }
+
+        [HttpPut("{id}")]
+        [Consumes(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> UpdateEntry(int id, Entry entry)
+        {
+            if (id != entry.Id)
+            {
+                return BadRequest();
+            }
+
+            var entryToUpdate = await _entryService.FindById(id);
+
+            if (entryToUpdate == null)
+            {
+                return NotFound();
+            }
+
+            entryToUpdate.CheckIn = entry.CheckIn;
+            entryToUpdate.CheckOut = entry.CheckOut;
+
+            await _entryService.UpdateEntry(entryToUpdate);
+
+            return NoContent();
+        }
+
+        [HttpPatch("{id}")]
+        [Consumes(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> PatchEntry(int id, EntryPatchDto patch)
+        {
+            var entryToUpdate = await _entryService.FindById(id);
+
+            if (entryToUpdate == null)
+            {
+                return NotFound();
+            }
+
+            if (patch.CheckIn.HasValue)
+            {
+                entryToUpdate.CheckIn = patch.CheckIn.Value;
+            }
+
+            if (patch.CheckOut.HasValue)
+            {
+                entryToUpdate.CheckOut = patch.CheckOut.Value;
+            }
+
+            await _entryService.UpdateEntry(entryToUpdate);
+            return Ok(entryToUpdate);
+        }
     }
 }
